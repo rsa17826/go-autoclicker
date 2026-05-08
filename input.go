@@ -27,6 +27,7 @@ const (
 	EV_SYN     = 0x00
 	BTN_LEFT   = 0x110
 	BTN_RIGHT  = 0x111
+	BTN_MIDDLE = 0x112
 	REL_X      = 0x00
 	REL_Y      = 0x01
 	REL_WHEEL  = 0x08
@@ -141,18 +142,16 @@ func createVirtualMouse() (*os.File, error) {
 	}
 
 	// Use your local constants (removed "unix." prefix)
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_EVBIT, EV_KEY)
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_KEYBIT, BTN_LEFT)
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_KEYBIT, BTN_RIGHT)
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_EVBIT, EV_REL)
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, REL_X)
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, REL_Y)
-	// Inside your uinput setup function
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_EVBIT, int(EV_REL))
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, int(REL_X))
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, int(REL_Y))
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, int(REL_WHEEL))  // Vertical Scroll
-	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, int(REL_HWHEEL)) // Horizontal Scroll
+	ifd := int(fd.Fd())
+	unix.IoctlSetInt(ifd, UI_SET_EVBIT, EV_KEY)
+	unix.IoctlSetInt(ifd, UI_SET_KEYBIT, BTN_LEFT)
+	unix.IoctlSetInt(ifd, UI_SET_KEYBIT, BTN_RIGHT)
+	unix.IoctlSetInt(ifd, UI_SET_KEYBIT, BTN_MIDDLE)
+	unix.IoctlSetInt(ifd, UI_SET_EVBIT, EV_REL)
+	unix.IoctlSetInt(ifd, UI_SET_RELBIT, REL_X)
+	unix.IoctlSetInt(ifd, UI_SET_RELBIT, REL_Y)
+	unix.IoctlSetInt(ifd, UI_SET_RELBIT, REL_WHEEL)
+	unix.IoctlSetInt(ifd, UI_SET_RELBIT, REL_HWHEEL)
 
 	// Setup the virtual device metadata
 	var usetup uinput_user_dev
