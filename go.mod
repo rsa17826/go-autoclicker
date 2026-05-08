@@ -1,4 +1,4 @@
-module goinputtest
+module go-autoclicker
 
 go 1.26.2
 
