@@ -23,7 +23,7 @@
           pname = "go-autoclicker";
           version = "1";
           src = ./.;
-          vendorHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+          vendorHash = "sha256-PZgheqWEkQcTSbOsa8p4smkP5S8eAtZfkGCWmap2sHY=";
         };
 
         # Development environment
