@@ -23,7 +23,6 @@
           pname = "go-autoclicker";
           version = "1";
           src = ./.;
-          deleteVendor = true;
           vendorHash = "sha256-Z1lODTODCkWOa98uf6/s9/urDoNjWqDrAIVnCZstkbz=";
         };
 
