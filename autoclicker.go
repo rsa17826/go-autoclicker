@@ -23,6 +23,7 @@ func runAutoclicker(mouseid string, kbdid string) {
 	}
 	mouse, _ := os.Open(mousePath)
 	keyboard, _ := os.Open(kbdPath)
+	// keyboard, _ := os.OpenFile(kbdPath, os.O_RDWR, 0666)
 	vMouse, _ := createVirtualMouse()
 	defer mouse.Close()
 	defer keyboard.Close()
@@ -39,9 +40,21 @@ func runAutoclicker(mouseid string, kbdid string) {
 	go func() {
 		for {
 			ev := readEvent(keyboard)
-			println(ev.Code)
-			if ev.Type == EV_KEY && (ev.Code == KEY_Z || ev.Code == KEY_SCROLL) {
-				turboEnabled = (ev.Value > 0) // True if Pressed or Held
+			if ev.Type == EV_KEY && ev.Code == KEY_SCROLL {
+				if ev.Value == 1 { // Key Pressed
+					turboEnabled = !turboEnabled // Toggle the logic
+
+					// // Toggle the LED
+					// if turboEnabled {
+					// 	toggleLED(keyboard, 1)
+					// } else {
+					// 	toggleLED(keyboard, 0)
+					// }
+				}
+			}
+			// If you still want KEY_Z to enable turbo without affecting LED:
+			if ev.Type == EV_KEY && ev.Code == KEY_Z {
+				turboEnabled = (ev.Value > 0)
 			}
 		}
 	}()
@@ -144,3 +157,18 @@ func monitorMouse(realMouse *os.File, vMouse *os.File, state *ClickState) {
 		binary.Write(vMouse, binary.LittleEndian, ev)
 	}
 }
+
+// // Helper to toggle the physical LED
+// func toggleLED(f *os.File, state int) {
+// 	// EV_LED = 0x11, LED_SCROLL = 0x02
+// 	ev := input_event{
+// 		Type:  0x11,
+// 		Code:  0x02,
+// 		Value: int32(state),
+// 	}
+// 	binary.Write(f, binary.LittleEndian, ev)
+
+// 	// Always send a SYN event after an update
+// 	syn := input_event{Type: 0x00, Code: 0, Value: 0}
+// 	binary.Write(f, binary.LittleEndian, syn)
+// }
