@@ -11,7 +11,7 @@ func main() {
 	ParseArgs([]ArgumentData{
 		{Keys: []string{"testDevice"}, AfterCount: 0, Target: &testDevice},
 		{Keys: []string{"startAutoclicker"}, AfterCount: 2, Target: &startAutoclicker},
-		{Keys: []string{"help", "h"}, AfterCount: 0, Target: &help}, // Add this
+		{Keys: []string{"help", "h"}, AfterCount: 0, Target: &help},
 	})
 
 	if testDevice {

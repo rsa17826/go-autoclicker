@@ -38,7 +38,7 @@ func getDeviceToUser() {
 					if ev.Type == 1 && ev.Value == 1 {
 						id := getPersistentID(p)
 						if id != "" {
-							foundChan <- "id:" + id
+							foundChan <- "id:" + strings.TrimPrefix(id, "/dev/input/by-id/")
 						} else {
 							foundChan <- "name:" + getDeviceName(p)
 						}
