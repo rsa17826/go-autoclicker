@@ -34,6 +34,7 @@ func runAutoclicker(mouseid string, kbdid string) {
 	defer unix.IoctlSetInt(int(mouse.Fd()), EVIOCGRAB, 0)
 
 	var turboEnabled bool
+	var scrollEnabled bool
 	var leftDown, rightDown bool
 
 	// 2. Keyboard thread: Watch for Z or ScrollLock
@@ -43,9 +44,9 @@ func runAutoclicker(mouseid string, kbdid string) {
 			if ev.Type == EV_KEY && ev.Code == KEY_SCROLL {
 				if ev.Value == 1 { // Key Pressed
 					turboEnabled = !turboEnabled // Toggle the logic
-
+					scrollEnabled = !scrollEnabled
 					// // Toggle the LED
-					// if turboEnabled {
+					// if scrollEnabled {
 					// 	toggleLED(keyboard, 1)
 					// } else {
 					// 	toggleLED(keyboard, 0)
@@ -54,7 +55,9 @@ func runAutoclicker(mouseid string, kbdid string) {
 			}
 			// If you still want KEY_Z to enable turbo without affecting LED:
 			if ev.Type == EV_KEY && ev.Code == KEY_Z {
-				turboEnabled = (ev.Value > 0)
+				if !scrollEnabled {
+					turboEnabled = ev.Value > 0
+				}
 			}
 		}
 	}()
