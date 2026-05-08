@@ -52,6 +52,6 @@ func getDeviceToUser() {
 	// Wait for the first device to send a keypress
 	winningID := <-foundChan
 	fmt.Printf("\nTarget Device Identified!\n")
-	fmt.Printf("Persistent ID: %s\n", winningID)
+	fmt.Printf("Persistent ID: \"%s\"\n", winningID)
 	fmt.Println("Use this path in your code to ensure you get the same device every time.")
 }
