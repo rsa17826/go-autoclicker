@@ -37,23 +37,34 @@ func runAutoclicker(mouseid string, kbdid string) {
 	var scrollEnabled bool
 	var leftDown, rightDown bool
 
-	// 2. Keyboard thread: Watch for Z or ScrollLock
+	// 1. THE WORKER: One goroutine that runs forever
+	go func() {
+		for {
+			if turboEnabled && (leftDown || rightDown) {
+				if leftDown {
+					sendClick(vMouse, BTN_LEFT)
+				}
+				if rightDown {
+					sendClick(vMouse, BTN_RIGHT)
+				}
+				time.Sleep(40 * time.Millisecond)
+			} else {
+				// If not clicking, sleep a bit so we don't pin the CPU
+				time.Sleep(10 * time.Millisecond)
+			}
+		}
+	}()
+
+	// 2. THE KEYBOARD THREAD
 	go func() {
 		for {
 			ev := readEvent(keyboard)
 			if ev.Type == EV_KEY && ev.Code == KEY_SCROLL {
-				if ev.Value == 1 { // Key Pressed
-					turboEnabled = !turboEnabled // Toggle the logic
+				if ev.Value == 1 { // Toggle on press
+					turboEnabled = !turboEnabled
 					scrollEnabled = !scrollEnabled
-					// // Toggle the LED
-					// if scrollEnabled {
-					// 	toggleLED(keyboard, 1)
-					// } else {
-					// 	toggleLED(keyboard, 0)
-					// }
 				}
 			}
-			// If you still want KEY_Z to enable turbo without affecting LED:
 			if ev.Type == EV_KEY && ev.Code == KEY_Z {
 				if !scrollEnabled {
 					turboEnabled = ev.Value > 0
@@ -62,36 +73,27 @@ func runAutoclicker(mouseid string, kbdid string) {
 		}
 	}()
 
-	// 3. Mouse Loop
+	// 3. THE MAIN MOUSE LOOP (The "Pass-through")
 	for {
 		ev := readEvent(mouse)
 
 		if ev.Type == EV_KEY {
 			if ev.Code == BTN_LEFT {
 				leftDown = (ev.Value == 1)
+				if turboEnabled {
+					continue
+				} // Block physical click
 			}
 			if ev.Code == BTN_RIGHT {
 				rightDown = (ev.Value == 1)
-			}
-
-			if turboEnabled && (leftDown || rightDown) {
-				// While buttons are held, spam virtual clicks
-				go func(l, r bool) {
-					for (leftDown || rightDown) && turboEnabled {
-						if leftDown {
-							sendClick(vMouse, BTN_LEFT)
-						}
-						if rightDown {
-							sendClick(vMouse, BTN_RIGHT)
-						}
-						time.Sleep(40 * time.Millisecond) // Turbo Speed
-					}
-				}(leftDown, rightDown)
-				continue // Skip the default pass-through
+				if turboEnabled {
+					continue
+				} // Block physical click
 			}
 		}
 
-		// Pass through everything else (movement, normal clicks)
+		// This line now handles EVERYTHING else:
+		// Mouse movement (REL_X/Y), Scrolling (REL_WHEEL), and Sync (EV_SYN)
 		binary.Write(vMouse, binary.LittleEndian, ev)
 	}
 }
@@ -156,7 +158,6 @@ func monitorMouse(realMouse *os.File, vMouse *os.File, state *ClickState) {
 			}
 		}
 
-		// 2. Use binary.Write instead of vMouse.SendEvent
 		binary.Write(vMouse, binary.LittleEndian, ev)
 	}
 }

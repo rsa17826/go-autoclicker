@@ -29,6 +29,8 @@ const (
 	BTN_RIGHT  = 0x111
 	REL_X      = 0x00
 	REL_Y      = 0x01
+	REL_WHEEL  = 0x08
+	REL_HWHEEL = 0x06
 	KEY_Z      = 44
 	KEY_SCROLL = 70
 
@@ -145,6 +147,12 @@ func createVirtualMouse() (*os.File, error) {
 	unix.IoctlSetInt(int(fd.Fd()), UI_SET_EVBIT, EV_REL)
 	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, REL_X)
 	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, REL_Y)
+	// Inside your uinput setup function
+	unix.IoctlSetInt(int(fd.Fd()), UI_SET_EVBIT, int(EV_REL))
+	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, int(REL_X))
+	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, int(REL_Y))
+	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, int(REL_WHEEL))  // Vertical Scroll
+	unix.IoctlSetInt(int(fd.Fd()), UI_SET_RELBIT, int(REL_HWHEEL)) // Horizontal Scroll
 
 	// Setup the virtual device metadata
 	var usetup uinput_user_dev
