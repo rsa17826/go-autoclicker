@@ -73,10 +73,6 @@ func main() {
 		if strings.HasPrefix(f.Name(), "event") {
 			path := "/dev/input/" + f.Name()
 			println(getDeviceName(path))
-			// Reuse the getDeviceName function from earlier
-			// if getDeviceName(path) == "Autocorrect-Virtual" {
-			// 	return path
-			// }
 			go func(p string) {
 				f, err := os.Open(p)
 				if err != nil {
