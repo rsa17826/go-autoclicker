@@ -7,7 +7,3 @@ require (
 	github.com/rsa17826/go-input-lib v0.0.0-20260508224102-a2a35426d907
 	golang.org/x/sys v0.44.0
 )
-
-replace github.com/rsa17826/go-arg-lib => ../goLibs/argparse
-
-replace github.com/rsa17826/go-input-lib => ../goLibs/input
