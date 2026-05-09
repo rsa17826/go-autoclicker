@@ -6,5 +6,7 @@ github.com/rsa17826/go-input-lib v0.0.0-20260508224102-a2a35426d907 h1:RfkTLmJHG
 github.com/rsa17826/go-input-lib v0.0.0-20260508224102-a2a35426d907/go.mod h1:qxEDQd76ud3ZsCwsOQqVoS4G9mTfHOFeX2q1fmEFp1Y=
 github.com/rsa17826/go-input-lib v0.0.0-20260508225423-4f4fed2d42ac h1:W5hlTI8tDomZhZsRWQnR0KzTG4WlehnaINBNvF6VzKE=
 github.com/rsa17826/go-input-lib v0.0.0-20260508225423-4f4fed2d42ac/go.mod h1:+nUmviXztY9e6S0X7h/vaBJnC06cf5JaH08JiaEht+w=
+github.com/rsa17826/go-input-lib v0.0.0-20260509131009-f59c819593d4 h1:N73ZfpR3QA3XexGkzXPbzaiujdCMzOuDAtZ5c6SD3Cs=
+github.com/rsa17826/go-input-lib v0.0.0-20260509131009-f59c819593d4/go.mod h1:+nUmviXztY9e6S0X7h/vaBJnC06cf5JaH08JiaEht+w=
 golang.org/x/sys v0.44.0 h1:ildZl3J4uzeKP07r2F++Op7E9B29JRUy+a27EibtBTQ=
 golang.org/x/sys v0.44.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=

@@ -13,12 +13,20 @@ type ClickState struct {
 	TurboActive bool
 }
 
-func runAutoclicker(mouseid string, kbdid string) {
-	mousePath, err := input.GetDeviceFromIdOrName(mouseid)
+func runAutoclicker(mouseid string, kbdid string, waitForDevice bool) {
+	var getDevice func(string) (string, error)
+	if waitForDevice {
+		getDevice = func(s string) (string, error) {
+			return input.WaitForDevice(s), nil
+		}
+	} else {
+		getDevice = input.GetDeviceFromIdOrName
+	}
+	mousePath, err := getDevice(mouseid)
 	if err != nil {
 		println(err)
 	}
-	kbdPath, err := input.GetDeviceFromIdOrName(kbdid)
+	kbdPath, err := getDevice(kbdid)
 	if err != nil {
 		println(err)
 	}
@@ -40,7 +48,10 @@ func runAutoclicker(mouseid string, kbdid string) {
 	defer vMouse.Close()
 
 	// 1. Grab the physical mouse so the OS doesn't see double-input
-	unix.IoctlSetInt(int(mouse.Fd()), input.EVIOCGRAB, 1)
+	err = unix.IoctlSetInt(int(mouse.Fd()), input.EVIOCGRAB, 1)
+	if err != nil {
+		panic(err)
+	}
 	defer unix.IoctlSetInt(int(mouse.Fd()), input.EVIOCGRAB, 0)
 
 	var turboEnabled bool
@@ -104,7 +115,10 @@ func runAutoclicker(mouseid string, kbdid string) {
 
 		// This line now handles EVERYTHING else:
 		// Mouse movement (REL_X/Y), Scrolling (REL_WHEEL), and Sync (input.EV_SYN)
-		binary.Write(vMouse, binary.LittleEndian, ev)
+		err = binary.Write(vMouse, binary.LittleEndian, ev)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
