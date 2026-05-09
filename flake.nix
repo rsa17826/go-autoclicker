@@ -2,8 +2,12 @@
   description = "A simple Go autoclicker";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    utils.url = "github:numtide/flake-utils";
+    nixpkgs = {
+      url = "github:NixOS/nixpkgs/nixos-unstable";
+    };
+    utils = {
+      url = "github:numtide/flake-utils";
+    };
   };
 
   outputs =
@@ -18,20 +22,23 @@
         pkgs = import nixpkgs { inherit system; };
       in
       {
-        # The actual package
-        packages.default = pkgs.buildGoModule {
-          pname = "go-autoclicker";
-          version = "1";
-          src = ./.;
-          vendorHash = "sha256-WzeI89DtsBZod/h8jP+DEqzeBDbQQWHX377SZaELs2Q=";
+        packages = {
+          # The actual package
+          default = pkgs.buildGoModule {
+            pname = "go-autoclicker";
+            version = "1";
+            src = ./.;
+            vendorHash = "sha256-ePH+0XpQLVVJG8eZv+Uhxjmd9Du0KYSBjOAboFM34M4=";
+          };
         };
-
-        # Development environment
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            go
-            gopls
-          ];
+        devShells = {
+          # Development environment
+          default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              go
+              gopls
+            ];
+          };
         };
       }
     );
