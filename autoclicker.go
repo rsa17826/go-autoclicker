@@ -22,10 +22,19 @@ func runAutoclicker(mouseid string, kbdid string) {
 	if err != nil {
 		println(err)
 	}
-	mouse, _ := os.Open(mousePath)
-	keyboard, _ := os.Open(kbdPath)
+	mouse, err := os.Open(mousePath)
+	if err != nil {
+		panic(err)
+	}
+	keyboard, err := os.Open(kbdPath)
+	if err != nil {
+		panic(err)
+	}
 	// keyboard, _ := os.OpenFile(kbdPath, os.O_RDWR, 0666)
-	vMouse, _ := input.CreateVirtualMouse()
+	vMouse, err := input.CreateVirtualMouse()
+	if err != nil {
+		panic(err)
+	}
 	defer mouse.Close()
 	defer keyboard.Close()
 	defer vMouse.Close()
