@@ -2,63 +2,29 @@ package main
 
 import (
 	"encoding/binary"
+	"fmt"
+	"net"
 	"os"
 	"time"
 
 	"github.com/rsa17826/go-input-lib"
-	"golang.org/x/sys/unix"
 )
 
 type ClickState struct {
 	TurboActive bool
 }
 
-func runAutoclicker(mouseid string, kbdid string, waitForDevice bool) {
-	var getDevice func(string) (string, error)
-	if waitForDevice {
-		getDevice = func(s string) (string, error) {
-			return input.WaitForDevice(s), nil
-		}
-	} else {
-		getDevice = input.GetDeviceFromIdOrName
-	}
-	mousePath, err := getDevice(mouseid)
-	if err != nil {
-		println(err)
-	}
-	kbdPath, err := getDevice(kbdid)
-	if err != nil {
-		println(err)
-	}
-	mouse, err := os.Open(mousePath)
-	if err != nil {
-		panic(err)
-	}
-	keyboard, err := os.Open(kbdPath)
-	if err != nil {
-		panic(err)
-	}
-	// keyboard, _ := os.OpenFile(kbdPath, os.O_RDWR, 0666)
+func runAutoclicker() {
 	vMouse, err := input.CreateVirtualMouse()
 	if err != nil {
 		panic(err)
 	}
-	defer mouse.Close()
-	defer keyboard.Close()
 	defer vMouse.Close()
-
-	// 1. Grab the physical mouse so the OS doesn't see double-input
-	err = unix.IoctlSetInt(int(mouse.Fd()), input.EVIOCGRAB, 1)
-	if err != nil {
-		panic(err)
-	}
-	defer unix.IoctlSetInt(int(mouse.Fd()), input.EVIOCGRAB, 0)
 
 	var turboEnabled bool
 	var scrollEnabled bool
 	var leftDown, rightDown bool
 
-	// 1. THE WORKER: One goroutine that runs forever
 	go func() {
 		for {
 			if turboEnabled && (leftDown || rightDown) {
@@ -76,48 +42,49 @@ func runAutoclicker(mouseid string, kbdid string, waitForDevice bool) {
 		}
 	}()
 
-	// 2. THE KEYBOARD THREAD
-	go func() {
-		for {
-			ev := readEvent(keyboard)
-			if ev.Type == input.EV_KEY && ev.Code == input.KEY_SCROLL {
-				if ev.Value == 1 { // Toggle on press
-					turboEnabled = !turboEnabled
-					scrollEnabled = !scrollEnabled
-				}
-			}
-			if ev.Type == input.EV_KEY && ev.Code == input.KEY_Z {
-				if !scrollEnabled {
-					turboEnabled = ev.Value > 0
-				}
-			}
-		}
-	}()
-
-	// 3. THE MAIN MOUSE LOOP (The "Pass-through")
 	for {
-		ev := readEvent(mouse)
-
-		if ev.Type == input.EV_KEY {
-			if ev.Code == input.BTN_LEFT {
-				leftDown = (ev.Value == 1)
-				if turboEnabled {
-					continue
-				} // Block physical click
-			}
-			if ev.Code == input.BTN_RIGHT {
-				rightDown = (ev.Value == 1)
-				if turboEnabled {
-					continue
-				} // Block physical click
-			}
-		}
-
-		// This line now handles EVERYTHING else:
-		// Mouse movement (REL_X/Y), Scrolling (REL_WHEEL), and Sync (input.EV_SYN)
-		err = binary.Write(vMouse, binary.LittleEndian, ev)
+		conn, err := net.Dial("unix", "/tmp/kbd_manager.sock")
 		if err != nil {
 			panic(err)
+		}
+		defer conn.Close()
+
+		fmt.Fprintln(conn, "FILTER")
+
+		for {
+			var ev WireEvent
+			err := binary.Read(conn, binary.LittleEndian, &ev)
+			if err != nil {
+				fmt.Println("read error:", err)
+				return
+			}
+			if ev.Type == input.EV_KEY {
+				if ev.Code == input.KEY_SCROLL {
+					if ev.Value == 1 {
+						turboEnabled = !turboEnabled
+						scrollEnabled = !scrollEnabled
+					}
+				}
+				if ev.Code == input.KEY_Z {
+					if !scrollEnabled {
+						turboEnabled = ev.Value > 0
+					}
+				}
+			}
+			if ev.Type == input.EV_KEY {
+				if ev.Code == input.BTN_LEFT {
+					leftDown = (ev.Value == 1)
+					if turboEnabled {
+						// block
+					}
+				}
+				if ev.Code == input.BTN_RIGHT {
+					rightDown = (ev.Value == 1)
+					if turboEnabled {
+						// block
+					}
+				}
+			}
 		}
 	}
 }
@@ -130,60 +97,12 @@ func sendClick(v *os.File, code uint16) {
 	binary.Write(v, binary.LittleEndian, input.InputEvent{Type: input.EV_SYN, Code: 0, Value: 0})
 }
 
-func readEvent(f *os.File) input.InputEvent {
-	var ev input.InputEvent
-	binary.Read(f, binary.LittleEndian, &ev)
-	return ev
-}
-func monitorKeyboard(dev *os.File, state *ClickState) {
-	for {
-		ev := readEvent(dev) // Assume a helper that reads input.InputEvent struct
-
-		// input.KEY_Z = 44, KEY_SCROLLLOCK = 70
-		if ev.Type == input.EV_KEY {
-			if ev.Code == 44 || ev.Code == 70 {
-				state.TurboActive = (ev.Value > 0) // True if pressed or held
-			}
-		}
-	}
-}
-func monitorMouse(realMouse *os.File, vMouse *os.File, state *ClickState) {
-	// 1. Use unix.IoctlSetInt and unix.input.EVIOCGRAB
-	unix.IoctlSetInt(int(realMouse.Fd()), input.EVIOCGRAB, 1)
-	defer unix.IoctlSetInt(int(realMouse.Fd()), input.EVIOCGRAB, 0)
-
-	leftPressed := false
-	rightPressed := false
-
-	for {
-		ev := readEvent(realMouse)
-
-		if ev.Type == input.EV_KEY {
-			if ev.Code == input.BTN_LEFT {
-				leftPressed = (ev.Value == 1)
-			}
-			if ev.Code == input.BTN_RIGHT {
-				rightPressed = (ev.Value == 1)
-			}
-
-			if state.TurboActive && (leftPressed || rightPressed) {
-				go func() {
-					for (leftPressed || rightPressed) && state.TurboActive {
-						if leftPressed {
-							sendClick(vMouse, input.BTN_LEFT) // Use your helper function
-						}
-						if rightPressed {
-							sendClick(vMouse, input.BTN_RIGHT) // Use your helper function
-						}
-						time.Sleep(50 * time.Millisecond)
-					}
-				}()
-				continue // Don't pass through the original click
-			}
-		}
-
-		binary.Write(vMouse, binary.LittleEndian, ev)
-	}
+type WireEvent struct {
+	Sec   int64
+	Usec  int64
+	Type  uint16
+	Code  uint16
+	Value int32
 }
 
 // // Helper to toggle the physical LED
