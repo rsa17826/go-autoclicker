@@ -14,7 +14,7 @@ type ClickState struct {
 }
 
 func runAutoclicker() {
-	vMouse, err := input.CreateVirtualMouse()
+	vMouse, err := input.CreateVirtualMouse("Turbo Mouse")
 	if err != nil {
 		panic(err)
 	}
