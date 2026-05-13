@@ -5,7 +5,7 @@
     nixpkgs = {
       url = "github:NixOS/nixpkgs/nixos-unstable";
     };
-    utils = {
+    flake-utils = {
       url = "github:numtide/flake-utils";
     };
   };
@@ -14,9 +14,9 @@
     {
       self,
       nixpkgs,
-      utils,
+      flake-utils,
     }:
-    utils.lib.eachDefaultSystem (
+    flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -28,7 +28,7 @@
             pname = "go-autoclicker";
             version = "1";
             src = ./.;
-            vendorHash = "sha256-ePH+0XpQLVVJG8eZv+Uhajmd9Du0KYSBjOAboFM34M4=";
+            vendorHash = "sha256-Hwg8MydGCDyuRNEwaaMc/alDHGTt/XOH6Kqg+YQ2SjI=";
           };
         };
         devShells = {
