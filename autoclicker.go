@@ -19,7 +19,7 @@ func runAutoclicker() {
 		panic(err)
 	}
 	defer vMouse.Close()
-
+	println("start")
 	var turboEnabled bool
 	var scrollEnabled bool
 	var leftDown, rightDown bool
@@ -63,7 +63,7 @@ func runAutoclicker() {
 			fmt.Println("read error:", err)
 			return
 		}
-		println(ev.Type)
+
 		if ev.Type == input.EV_KEY {
 			if ev.Code == input.KEY_SCROLLLOCK {
 				if ev.Value == 1 {
@@ -104,18 +104,3 @@ type WireEvent struct {
 	Code  uint16
 	Value int32
 }
-
-// // Helper to toggle the physical LED
-// func toggleLED(f *os.File, state int) {
-// 	// EV_LED = 0x11, LED_SCROLL = 0x02
-// 	ev := input.InputEvent{
-// 		Type:  0x11,
-// 		Code:  0x02,
-// 		Value: int32(state),
-// 	}
-// 	binary.Write(f, binary.LittleEndian, ev)
-
-// 	// Always send a SYN event after an update
-// 	syn := input.InputEvent{Type: 0x00, Code: 0, Value: 0}
-// 	binary.Write(f, binary.LittleEndian, syn)
-// }
