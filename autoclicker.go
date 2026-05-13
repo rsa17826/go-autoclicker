@@ -13,7 +13,7 @@ type ClickState struct {
 	TurboActive bool
 }
 
-func runAutoclicker() {
+func runAutoclicker(downFor, upFor int) {
 	vMouse, err := input.CreateVirtualMouse("Turbo Mouse")
 	if err != nil {
 		panic(err)
@@ -30,16 +30,21 @@ func runAutoclicker() {
 				if leftDown {
 					vMouse.SendEvent(input.EV_KEY, input.BTN_LEFT, 1)
 					vMouse.Sync()
-					vMouse.SendEvent(input.EV_KEY, input.BTN_LEFT, 0)
-					vMouse.Sync()
 				}
 				if rightDown {
 					vMouse.SendEvent(input.EV_KEY, input.BTN_RIGHT, 1)
 					vMouse.Sync()
+				}
+				time.Sleep(time.Duration(downFor) * time.Millisecond)
+				if leftDown {
+					vMouse.SendEvent(input.EV_KEY, input.BTN_LEFT, 0)
+					vMouse.Sync()
+				}
+				if rightDown {
 					vMouse.SendEvent(input.EV_KEY, input.BTN_RIGHT, 0)
 					vMouse.Sync()
 				}
-				time.Sleep(40 * time.Millisecond)
+				time.Sleep(time.Duration(upFor) * time.Millisecond)
 			} else {
 				// If not clicking, sleep a bit so we don't pin the CPU
 				time.Sleep(10 * time.Millisecond)
@@ -90,9 +95,9 @@ func runAutoclicker() {
 			}
 		}
 		if shouldBlock {
-			conn.Write([]byte{'1'}) // Tell server NOT to pass this to the virtual device
+			conn.Write([]byte{'1'})
 		} else {
-			conn.Write([]byte{'0'}) // Tell server to pass it through normally
+			conn.Write([]byte{'0'})
 		}
 	}
 }
