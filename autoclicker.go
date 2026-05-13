@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net"
-	"os"
 	"time"
 
 	"github.com/rsa17826/go-input-lib"
@@ -29,10 +28,16 @@ func runAutoclicker() {
 		for {
 			if turboEnabled && (leftDown || rightDown) {
 				if leftDown {
-					sendClick(vMouse, input.BTN_LEFT)
+					vMouse.SendEvent(input.EV_KEY, input.BTN_LEFT, 1)
+					vMouse.Sync()
+					vMouse.SendEvent(input.EV_KEY, input.BTN_LEFT, 0)
+					vMouse.Sync()
 				}
 				if rightDown {
-					sendClick(vMouse, input.BTN_RIGHT)
+					vMouse.SendEvent(input.EV_KEY, input.BTN_RIGHT, 1)
+					vMouse.Sync()
+					vMouse.SendEvent(input.EV_KEY, input.BTN_RIGHT, 0)
+					vMouse.Sync()
 				}
 				time.Sleep(40 * time.Millisecond)
 			} else {
@@ -42,59 +47,54 @@ func runAutoclicker() {
 		}
 	}()
 
+	conn, err := net.Dial("unix", "/tmp/kbd_manager.sock")
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
+	fmt.Fprintln(conn, "FILTER")
+
 	for {
-		conn, err := net.Dial("unix", "/tmp/kbd_manager.sock")
+		var shouldBlock bool
+		var ev WireEvent
+		err := binary.Read(conn, binary.LittleEndian, &ev)
 		if err != nil {
-			panic(err)
+			fmt.Println("read error:", err)
+			return
 		}
-		defer conn.Close()
-
-		fmt.Fprintln(conn, "FILTER")
-
-		for {
-			var ev WireEvent
-			err := binary.Read(conn, binary.LittleEndian, &ev)
-			if err != nil {
-				fmt.Println("read error:", err)
-				return
-			}
-			if ev.Type == input.EV_KEY {
-				if ev.Code == input.KEY_SCROLL {
-					if ev.Value == 1 {
-						turboEnabled = !turboEnabled
-						scrollEnabled = !scrollEnabled
-					}
-				}
-				if ev.Code == input.KEY_Z {
-					if !scrollEnabled {
-						turboEnabled = ev.Value > 0
-					}
+		println(ev.Type)
+		if ev.Type == input.EV_KEY {
+			if ev.Code == input.KEY_SCROLLLOCK {
+				if ev.Value == 1 {
+					turboEnabled = !turboEnabled
+					scrollEnabled = !scrollEnabled
 				}
 			}
-			if ev.Type == input.EV_KEY {
-				if ev.Code == input.BTN_LEFT {
-					leftDown = (ev.Value == 1)
-					if turboEnabled {
-						// block
-					}
-				}
-				if ev.Code == input.BTN_RIGHT {
-					rightDown = (ev.Value == 1)
-					if turboEnabled {
-						// block
-					}
+			if ev.Code == input.KEY_Z {
+				if !scrollEnabled {
+					turboEnabled = ev.Value > 0
 				}
 			}
+			if ev.Code == input.BTN_LEFT {
+				leftDown = (ev.Value == 1)
+				if turboEnabled {
+					shouldBlock = true
+				}
+			}
+			if ev.Code == input.BTN_RIGHT {
+				rightDown = (ev.Value == 1)
+				if turboEnabled {
+					shouldBlock = true
+				}
+			}
+		}
+		if shouldBlock {
+			conn.Write([]byte{'1'}) // Tell server NOT to pass this to the virtual device
+		} else {
+			conn.Write([]byte{'0'}) // Tell server to pass it through normally
 		}
 	}
-}
-
-// Helper to send a virtual click (Down + Up + Sync)
-func sendClick(v *os.File, code uint16) {
-	binary.Write(v, binary.LittleEndian, input.InputEvent{Type: input.EV_KEY, Code: code, Value: 1})
-	binary.Write(v, binary.LittleEndian, input.InputEvent{Type: input.EV_SYN, Code: 0, Value: 0})
-	binary.Write(v, binary.LittleEndian, input.InputEvent{Type: input.EV_KEY, Code: code, Value: 0})
-	binary.Write(v, binary.LittleEndian, input.InputEvent{Type: input.EV_SYN, Code: 0, Value: 0})
 }
 
 type WireEvent struct {
