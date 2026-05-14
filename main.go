@@ -23,6 +23,6 @@ func main() {
 	if startAutoclicker {
 		runAutoclicker(downFor, upFor)
 	} else {
-		argparse.PrintHelp(args, nil)
+		argparse.PrintHelp(nil)
 	}
 }
