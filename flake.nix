@@ -28,7 +28,7 @@
             pname = "go-autoclicker";
             version = "1";
             src = ./.;
-            vendorHash = "sha256-IPHCMKR1TjaIiWiY1UWSXnLEY00Qd9pgHJP8vmD9dCw=";
+            vendorHash = "sha256-m3sw5t7LcM/XMeseVRgmElwz1KG5eRRvLLsYLWZhFWk=";
           };
         };
         devShells = {
